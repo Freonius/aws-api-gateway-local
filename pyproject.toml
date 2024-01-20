@@ -1,0 +1,157 @@
+[tool.poetry]
+name = "aws-api-gateway-local"
+version = "0.1.0"
+description = ""
+authors = ["Fred Pirani <freonius@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "aws_api_gateway_local" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.109.0"
+boto3 = "^1.34.23"
+uvicorn = "^0.26.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.14"
+mypy = "^1.8.0"
+black = "^23.12.1"
+boto3-type-annotations = "^0.3.1"
+aws-lambda-typing = "^2.18.0"
+bandit = "^1.7.6"
+poethepoet = "^0.24.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Linters
+[tool.mypy]
+exclude = ["tests/.*\\.py"]
+warn_return_any = true
+warn_unused_configs = true
+no_implicit_optional = true
+disallow_untyped_defs = true
+disallow_untyped_calls = true
+strict = true
+warn_unreachable = true
+warn_no_return = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = ["aws_lambda_typing.*", "boto3_type_annotations.*", "boto3.*"]
+
+[tool.ruff]
+select = [
+    "E",
+    "F",
+    "B",
+    "PL",
+    "D101",
+    "D103",
+    "D102",
+    "D100",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "C",
+]
+unfixable = ["B"]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "tests",
+    "*.pyi",
+]
+line-length = 100
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+# Commands
+[tool.poe.tasks.infra]
+shell = """
+if [[ $action == "apply" ]]; then
+    terraform apply -auto-approve
+elif [[ $action == "destroy" ]]; then
+    terraform destroy -auto-approve
+else
+    echo "Unknown action: $action"
+    exit 1
+fi
+"""
+interpreter = "bash"
+cwd = "./aws"
+args = [{ name = "action", default = "apply", positional = true }]
+
+[tool.poe.tasks.docker]
+interpreter = "bash"
+shell = """
+if [[ $action == "start" || $action == "up" ]]; then
+    docker-compose -f "./docker-compose.yml" up -d --build
+elif [[ $action == "stop" || $action == "down" ]]; then
+    docker-compose -f "./docker-compose.yml" down
+elif [[ $action == "lint" ]]; then
+    npx dockerlint ./Dockerfile
+    exit $?
+else
+    echo "Unknown action: $action"
+    exit 1
+fi
+"""
+args = [{ name = "action", default = "start", positional = true }]
+
+[tool.poe.tasks.start]
+shell = """
+poe docker start
+GOT_AWS=false
+AWS_URL="http://localhost:4566"
+
+for i in {0..10}; do
+    curl -k --fail $AWS_URL > /dev/null
+    if [[ $? -eq 0 ]]; then
+        GOT_AWS=true
+        break
+    fi
+    sleep 1
+done
+
+if [[ $GOT_AWS == false ]]; then
+    echo "Could not connect to AWS"
+    exit 1
+fi
+
+echo "Connected to AWS"
+
+echo "Applying infrastructure"
+poe infra apply
+"""
+interpreter = "bash"
+
+[tool.poe.tasks.stop]
+shell = """
+poe infra destroy
+poe docker stop
+"""
+interpreter = "bash"

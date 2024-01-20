@@ -1,0 +1,132 @@
+openapi: '3.0.2'
+info:
+  title: API Gateway
+  version: '0.1'
+servers:
+  - url: http://localhost:9000
+paths:
+  /data:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Data'
+      security:
+        - CognitoUserPool: []
+            
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Data'
+      security:
+        - CognitoUserPool: []
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "OK"
+
+    put:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Data'
+      security:
+        - CognitoUserPool: []
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "OK"
+
+  /register:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "OK"
+  /login:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: "Bearer"
+                  
+components:
+  schemas:
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "ciccio@pasticcio.dev"
+        password:
+          type: string
+          example: "password"
+    Register:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "ciccio@pasticcio.dev"
+        password:
+          type: string
+          example: "password"
+        first_name:
+          type: string
+          example: "Ciccio"
+        last_name:
+          type: string
+          example: "Pasticcio"
+    Data:
+      type: object
+      properties:
+        hello:
+          type: string
+          example: "world"    
+  securitySchemes:
+    CognitoUserPool:
+      type: apiKey
+      name: Authorization
+      in: header

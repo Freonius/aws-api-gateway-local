@@ -1,0 +1,25 @@
+[
+    {
+        "path": "/data",
+        "method": "GET",
+        "lambda": "get_data"
+    },
+    {
+        "path": "/data",
+        "method": [
+            "POST",
+            "PUT"
+        ],
+        "lambda": "post_data"
+    },
+    {
+        "path": "/login",
+        "method": "POST",
+        "lambda": "login"
+    },
+    {
+        "path": "/register",
+        "method": "POST",
+        "lambda": "register"
+    }
+]

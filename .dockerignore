@@ -1,0 +1,15 @@
+.venv/
+**__pycache__
+data/
+*.ipynb
+.vscode
+.mypy_cache
+*.log
+.pytest_cache
+.coverage
+logs
+dist/
+*.pdf
+*.svg
+node_modules
+*.exe
